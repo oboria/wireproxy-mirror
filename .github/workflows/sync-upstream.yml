@@ -36,6 +36,7 @@ jobs:
           git ls-remote --heads --tags "$DEST" \
             | awk '{print $2}' \
             | grep -v '^refs/heads/_mirror-control$' \
+            | grep -v '\^{}$' \
             | sort > /tmp/dest_refs.txt
           git for-each-ref --format='%(refname)' refs/heads refs/tags \
             | sort > /tmp/src_refs.txt
