@@ -1,0 +1,46 @@
+name: Sync from octeep/wireproxy
+on:
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+# Without this, the default GITHUB_TOKEN is read-only and the push step
+# fails (effectively a 403) rather than obviously erroring.
+permissions:
+  contents: write
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mirror upstream into this repo, preserving _mirror-control
+        run: |
+          set -euo pipefail
+
+          git clone --mirror https://github.com/octeep/wireproxy.git upstream.git
+          cd upstream.git
+
+          DEST="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/oboria/wireproxy-mirror.git"
+
+          # Force-update every upstream branch and tag onto the mirror, by exact
+          # name. Deliberately NOT `git push --mirror`/`--prune` here: those
+          # touch every ref on the destination, including `_mirror-control` (this
+          # workflow's own branch), which would delete the workflow that is
+          # currently running. This step only creates/updates refs that exist
+          # upstream.
+          git push --force "$DEST" '+refs/heads/*:refs/heads/*' '+refs/tags/*:refs/tags/*'
+
+          # Prune destination branches/tags that no longer exist upstream (e.g. a
+          # deleted upstream branch, or a re-tagged release), except the one
+          # branch that was never part of the upstream mirror to begin with.
+          git ls-remote --heads --tags "$DEST" \
+            | awk '{print $2}' \
+            | grep -v '^refs/heads/_mirror-control$' \
+            | sort > /tmp/dest_refs.txt
+          git for-each-ref --format='%(refname)' refs/heads refs/tags \
+            | sort > /tmp/src_refs.txt
+
+          comm -23 /tmp/dest_refs.txt /tmp/src_refs.txt | while read -r ref; do
+            echo "Pruning $ref (no longer upstream)"
+            git push "$DEST" ":$ref"
+          done
