@@ -1,4 +1,4 @@
-name: Sync from octeep/wireproxy
+name: Sync from windtf/wireproxy (formerly octeep/wireproxy)
 on:
   schedule:
     - cron: '17 4 * * *'
@@ -17,7 +17,11 @@ jobs:
         run: |
           set -euo pipefail
 
-          git clone --mirror https://github.com/octeep/wireproxy.git upstream.git
+          # windtf/wireproxy is this project's current canonical location
+          # (renamed/transferred from octeep/wireproxy at some point before
+          # this mirror was set up 2026-09-24 -- GitHub still redirects the
+          # old name, but that's not something to depend on indefinitely).
+          git clone --mirror https://github.com/windtf/wireproxy.git upstream.git
           cd upstream.git
 
           DEST="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/oboria/wireproxy-mirror.git"

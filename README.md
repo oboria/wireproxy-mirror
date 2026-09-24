@@ -1,25 +1,42 @@
 # wireproxy-mirror
 
 Permanent, org-owned, read-only mirror of
-[octeep/wireproxy](https://github.com/octeep/wireproxy) — a userspace
-WireGuard client/proxy.
+[windtf/wireproxy](https://github.com/windtf/wireproxy) (formerly
+`octeep/wireproxy` — see "A note on the upstream rename" below) — a
+userspace WireGuard client/proxy.
 
 ## Why this exists
 
 `oboria-admin-proxy` (see `common/procedures/it/claude-admin-proxy-architecture.md`
 in `oboria-org`) is adding a route ("Carrie") that needs a pinned `wireproxy`
 release binary. Claude Code sessions only get GitHub access to repositories
-already connected to this org, so a third-party repository like
-`octeep/wireproxy` can never be reached directly from a session's usual
-GitHub tooling. This mirror makes it permanently reachable, without a
-per-session scope request every time.
+already connected to this org, so a third-party repository like this one
+can never be reached directly from a session's usual GitHub tooling. This
+mirror makes it permanently reachable, without a per-session scope request
+every time.
+
+## What this mirror does NOT include: release binary assets
+
+`git clone`/`git push` only transfers git objects (commits, trees, blobs,
+tags) — **GitHub Releases and their uploaded binary assets are a separate,
+non-git object store and never travel with a git mirror.** This repository
+has the `v1.1.3` **tag** (a real git ref, pointing at the exact right
+commit), but not the compiled `wireproxy_*` binaries/`checksums.txt`
+attached to upstream's `v1.1.3` release — those still only exist at
+`https://github.com/windtf/wireproxy/releases/tag/v1.1.3` (still reachable
+read-only, same as any public repo). If `oboria-admin-proxy`'s "Carrie"
+route needs to serve those binaries from org-controlled infrastructure
+rather than fetching them from upstream at deploy time, that needs a
+separate, deliberate step (e.g. mirroring the release itself onto this
+repository via the GitHub Releases API, or another storage location) — not
+something this git-level sync provides for free.
 
 ## Where the actual mirrored content is
 
 **This branch (`_mirror-control`) is not the mirror.** It holds only this
 README and the sync workflow, and is deliberately excluded from the sync so
 the workflow can't delete itself (see below). The mirrored content —
-upstream's own branches and tags, exactly as `octeep/wireproxy` has them —
+upstream's own branches and tags, exactly as `windtf/wireproxy` has them —
 lives on `master` (upstream's own default branch), `udp`, and every
 `v*` tag. Browse those directly; `master` is what a real
 `git clone`/checkout of this repo's *content* should use, not this branch.
@@ -77,3 +94,17 @@ this repository's object store, which the Git Data API requires; those were
 brought in first via a temporary branch push (branch pushes are unaffected
 by the tag-push restriction), then deleted once the real tag ref existed
 independently.
+
+## A note on the upstream rename
+
+The GitHub account/repository this project was originally created under,
+`octeep/wireproxy`, is now `windtf/wireproxy` — confirmed via the GitHub
+API (`GET /repos/octeep/wireproxy` returns `full_name: "windtf/wireproxy"`,
+not a fork, no `parent`/`source`, i.e. the same repository under a new
+name/owner, not a different project). GitHub currently redirects the old
+name transparently for both `git clone` and the REST API, which is why
+requesting `octeep/wireproxy` still worked when this mirror was set up
+2026-09-24 — but a redirect like that isn't guaranteed to hold forever
+(e.g. if `octeep` is ever registered by someone else, GitHub would then
+resolve it to *their* repository instead of forwarding it). The sync
+workflow points at `windtf/wireproxy` directly for that reason.
